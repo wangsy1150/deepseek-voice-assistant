@@ -446,6 +446,9 @@ body {
   color: var(--text-dim); font-size: 12px; line-height: 1.55;
 }
 .trace-preview li + li { margin-top: 4px; }
+/* 命中片段的原文带换行（Markdown 的小节结构），保留它才读得懂。
+   默认 normal 会把 \n 折叠成空格，导致「## 报销流程 先提交发票…」糊成一行。 */
+.trace-preview li { white-space: pre-line; }
 .trace-preview b { color: var(--text); }
 .trace-score { color: var(--text-faint); margin: 0 6px; }
 
