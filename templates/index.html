@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="qS6S6aLemXg6KlgcJeZD4y">
+<head data-page-node-id="v93bwK95S5j0mM9lGJjHuP">
+  <meta charset="UTF-8" data-page-node-id="PzGMnnJfywLO3PP8MXwjA4" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="j2WBW0B4HF0D6Vs1ya9hdQ" />
+  <title>语音交互助手</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" data-page-node-id="8B1lrdUmM1TmVLMIncT7me" />
+</head>
+<body data-page-node-id="uSsuOsZ3XiMK3dTeFhRCRy">
+  <div class="app" data-page-node-id="aA9lJZWHKtuCPFcO9cIUeM">
+    <!-- ============ 顶部标题栏 ============ -->
+    <header class="topbar" data-page-node-id="eqYnxAhZdAxchsvGP1ktK0">
+      <div class="brand" data-page-node-id="HUOoH5avrToY2rDb2Hn7rS">
+        <div class="brand-logo" data-page-node-id="S59fsP2WsgiMnAhHAdeA9V">声</div>
+        <div class="brand-text" data-page-node-id="f8pfz62GwUiis4Mo8Rfay2">
+          <h1 data-page-node-id="llRd1u8lF3NXnoOHfrpzSO">语音交互助手</h1>
+          <p data-page-node-id="ou6DToBoqeWqKsIBqrAFpq">麦克风说话 → DeepSeek 思考 → edge-tts 朗读（失败自动降级浏览器）</p>
+        </div>
+      </div>
+      <div class="topbar-right" data-page-node-id="EdGb7EIfj4kd1PqOgFjzY0">
+        <span class="pill" id="modelPill" data-page-node-id="THms4TbUKsX13MbsMHmC7r">模型：{{ model }}</span>
+        <span class="pill" id="agentPill">Agent：检测中…</span>
+        <span class="pill" id="voicePill">朗读：检测中…</span>
+        <span class="pill" id="memoryPill">记忆：0/{{ max_turns }} 轮</span>
+        <span class="pill" id="keyPill" data-page-node-id="y73HhdTgmfFVmci2hUpQ8s">环境自检中…</span>
+      </div>
+    </header>
+
+    <!-- ============ 密钥缺失 / 浏览器不支持的提示条 ============ -->
+    <div class="alert" id="alertBox" hidden data-page-node-id="GWeTbh2nytdMyJRqyKUMVn"></div>
+
+    <!-- ============ 对话区 ============ -->
+    <main class="chat" id="chat" data-page-node-id="f0KqpiqXX6ovZ1fJQlRT69">
+      <div class="empty" id="emptyState" data-page-node-id="4BGjnbej9HHpRR2bsXVGB2">
+        <div class="empty-icon" data-page-node-id="uDPGwRy5lIXqsMdmTrekzY">🎙️</div>
+        <p data-page-node-id="7mDfN0vJTnFOkdGyQLAExk">点击下方按钮开始说话</p>
+        <p class="empty-sub" data-page-node-id="WuEuC41KVXAO0oUl6yVZ9T">也支持直接在输入框里打字提问</p>
+      </div>
+    </main>
+
+    <!-- ============ 实时状态 ============ -->
+    <div class="statusbar" data-page-node-id="7eJ1ElQboHuN90Ccm2EW0l">
+      <span class="status-dot" id="statusDot" data-page-node-id="Ga1ZLIkWIcgRLcaG1jVdwu"></span>
+      <span id="statusText" data-page-node-id="OJRQIDNAjGs3xoG9XoBozP">准备就绪</span>
+      <span class="status-extra" id="statusExtra" data-page-node-id="lHrFbDhESx1dEGwkYGnMp6"></span>
+    </div>
+
+    <!-- ============ 底部控制区 ============ -->
+    <footer class="controls" data-page-node-id="LK3fqAi9pT0DcpquAM3pIp">
+      <div class="controls-row" data-page-node-id="1nkpnQAXpASLRO1wutwDct">
+        <button class="mic-btn" id="micBtn" title="点击开始/停止录音" data-page-node-id="Ba7WSeowLdSkgi1Igbgbc1">
+          <span class="mic-icon" data-page-node-id="W1dLadmuEEwHD1ZFMvxCl9">🎤</span>
+          <span class="mic-label" id="micLabel" data-page-node-id="23x3R5VqEbwLb46AVL7kBQ">按住说话</span>
+        </button>
+
+        <div class="input-wrap" data-page-node-id="LozkS5t4cV0q6FHFzVnK00">
+          <input type="text" id="textInput" placeholder="也可以直接输入文字，回车发送…" autocomplete="off" data-page-node-id="5fB7145AcvFasQtf1OwhNj" />
+          <button class="send-btn" id="sendBtn" data-page-node-id="zs4TmhCdw6ZnikHHcsgOoP">发送</button>
+        </div>
+
+        <button class="ghost-btn" id="stopSpeakBtn" title="停止朗读" data-page-node-id="XxFwOliOeusL9HUukjXxz2">🔇 停止朗读</button>
+        <button class="ghost-btn" id="replayBtn" title="用当前选中的音色重新朗读上一条回答">🔁 重新朗读</button>
+      </div>
+
+      <div class="controls-row options" data-page-node-id="dEtuIpRzWp6TCBS2mHxbDA">
+        <label class="opt" data-page-node-id="zKIl2RIYK9BY3dRFT3Ghm5">
+          <span data-page-node-id="d0camUJTZupGCdrBZqzBei">音色</span>
+          <select id="voiceSelect" data-page-node-id="EGEN19o4sAzLEdIPQP831X"></select>
+        </label>
+        <label class="opt" data-page-node-id="RHE4b1sLFL6vateRPQjd91">
+          <span data-page-node-id="6c0I54VZPuKT4xpXDXQX6Q">语速 <b id="rateValue" data-page-node-id="CJtFjj0P9VZN1iC1jZSDZc">1.0</b></span>
+          <input type="range" id="rateRange" min="0.5" max="2" step="0.1" value="1" data-page-node-id="bYGFZi6FqFoDZ40putJaSM" />
+        </label>
+        <label class="opt switch" data-page-node-id="fc9Xa6gNoYVaZjAQ8zoiFb">
+          <input type="checkbox" id="autoSpeak" checked data-page-node-id="5wXOHFQyZfBeGRUz2hu2wE" />
+          <span data-page-node-id="LiXxRx76yXxPNiESYU2PDp">自动朗读回答</span>
+        </label>
+        <label class="opt switch" data-page-node-id="IfvSmwJeu4DaArf32ouHLo">
+          <input type="checkbox" id="continuousMode" data-page-node-id="eaZACAM1lqaHHyBDaiOOo5" />
+          <span data-page-node-id="k6e9ykmi2MlJBBctuPbYgA">连续对话（回答完自动再听）</span>
+        </label>
+        <label class="opt switch" title="开启后，AI 会自己判断要不要查知识库，并在回答下方展示决策过程">
+          <input type="checkbox" id="agentMode" checked />
+          <span>Agent 模式（AI 自主决定查不查资料）</span>
+        </label>
+        <button class="ghost-btn small" id="kbBtn" title="上传 .md / .txt 资料，让 AI 依据它们回答">📚 知识库 <b id="kbCount">0</b></button>
+        <button class="ghost-btn small" id="clearBtn" data-page-node-id="M0mghrqfhtMHZbcvrfMo4j">清空对话</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ============ 知识库面板（浮层，点「📚 知识库」按钮开关） ============ -->
+  <div class="kb-panel" id="kbPanel" hidden>
+    <div class="kb-head">
+      <strong>📚 知识库</strong>
+      <span class="kb-stats" id="kbStats">加载中…</span>
+      <button class="ghost-btn small" id="kbCloseBtn">关闭</button>
+    </div>
+
+    <!-- AI 手上的工具箱：这里把每个工具的描述说明原样展示出来 -->
+    <details class="kb-toolbox" id="kbToolbox" open>
+      <summary>🧰 AI 的工具箱</summary>
+      <div class="kb-toolbox-body" id="kbToolboxBody">加载中…</div>
+    </details>
+
+    <div class="kb-drop" id="kbDrop">
+      <input type="file" id="kbFile" accept=".md,.markdown,.txt,.text" multiple hidden />
+      <div class="kb-drop-text">
+        <span class="kb-drop-icon">📥</span>
+        <span>把 .md / .txt 文件拖到这里，或 <button class="link-btn" id="kbPickBtn" type="button">点击选择文件</button></span>
+      </div>
+    </div>
+
+    <ul class="kb-list" id="kbList"></ul>
+
+    <div class="kb-foot">
+      <button class="ghost-btn small" id="kbRefreshBtn">刷新列表</button>
+      <button class="ghost-btn small danger" id="kbClearBtn">清空知识库</button>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script src="{{ url_for('static', filename='agent.js') }}"></script>
+</body>
+</html>
